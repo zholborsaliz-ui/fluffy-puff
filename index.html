@@ -285,45 +285,55 @@
     const TELEGRAM_BOT_TOKEN = 8768463261:AAGgRKK7xPsDHbRsBivCurRI7LvPueOgjA4;
     const TELEGRAM_CHAT_ID = 7252464653;
 
-    document.getElementById('bakeryForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+    e.preventDefault();
 
-        // Собираем данные из формы
-        const cake = document.getElementById('cakeType').selectedOptions[0].text;
-        const name = this.querySelector('input[placeholder="Иван Иванов"]').value;
-        const phone = this.querySelector('input[type="tel"]').value;
-        const address = this.querySelector('input[placeholder="Улица, дом, квартира"]').value;
+    // 1. Проверяем, есть ли товары в корзине
+    if (cart.length === 0) {
+        alert('Ваша корзина пуста!');
+        return;
+    }
 
-        // Формируем текст сообщения
-        const message = `🎂 *Новый заказ!*\n\n` +
-                        `🍰 Изделие: ${cake}\n` +
-                        `👤 Клиент: ${name}\n` +
-                        `📞 Телефон: ${phone}\n` +
-                        `🏠 Адрес: ${address}`;
+    // 2. Получаем данные из полей ввода (убедитесь, что ID совпадают с HTML)
+    const name = document.getElementById('custName').value;
+    const phone = document.getElementById('custPhone').value;
+    const address = document.getElementById('custAddr').value;
+    
+    // 3. Собираем текст корзины
+    let itemsText = cart.map(i => `• ${i.name} (${i.quantity} шт.) — ${i.price * i.quantity}₽`).join('\n');
+    let totalSum = document.getElementById('cart-total').innerText;
+    
+    // 4. Формируем сообщение
+    const message = `🚀 НОВЫЙ ЗАКАЗ\n\n` +
+                    `📦 Товары:\n${itemsText}\n\n` +
+                    `💰 Итого: ${totalSum} ₽\n\n` +
+                    `👤 Клиент: ${name}\n` +
+                    `📞 Тел: ${phone}\n` +
+                    `🏠 Адрес: ${address}`;
 
-        // Отправляем в Telegram через API
-        fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: TELEGRAM_CHAT_ID,
-                text: message,
-                parse_mode: 'Markdown'
-            })
+    // 5. Отправка
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            chat_id: CHAT_ID, 
+            text: message, 
+            parse_mode: 'Markdown' 
         })
-        .then(response => {
-            if (response.ok) {
-                alert('Заказ успешно отправлен! Мы скоро вам перезвоним.');
-                document.getElementById('bakeryForm').reset();
-            } else {
-                alert('Произошла ошибка. Попробуйте еще раз или позвоните нам.');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Ошибка сети. Проверьте интернет.');
-        });
-    });
+    })
+    .then(response => {
+        if (response.ok) {
+            alert('Заказ успешно отправлен в Telegram!');
+            cart = []; // Очищаем корзину
+            updateCartUI();
+            toggleCart(); // Закрываем окно
+            this.reset(); // Очищаем форму
+        } else {
+            alert('Ошибка при отправке. Проверьте Token и Chat ID.');
+        }
+    })
+    .catch(err => alert('Ошибка сети: ' + err));
+});
 
 </script>
 </body>
